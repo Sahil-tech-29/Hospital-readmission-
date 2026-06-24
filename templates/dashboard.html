@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — ReadmitAI</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="nav-icon">⚕</span>
+      <span>ReadmitAI</span>
+    </div>
+    <div class="nav-links">
+      <a href="/">Predict</a>
+      <a href="/dashboard" class="active">Dashboard</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="page-header">
+      <h1>Analytics Dashboard</h1>
+      <p class="subtitle">Aggregate statistics across all predictions made in this session.</p>
+    </header>
+
+    <!-- Summary cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">{{ stats.total }}</div>
+        <div class="stat-label">Patients screened</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:#ef4444">{{ stats.high_risk }}</div>
+        <div class="stat-label">High-risk patients</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:#f59e0b">{{ stats.high_risk_pct }}%</div>
+        <div class="stat-label">High-risk rate</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:#3b82f6">{{ stats.avg_score }}%</div>
+        <div class="stat-label">Avg risk score</div>
+      </div>
+    </div>
+
+    <!-- Global SHAP importance -->
+    <div class="chart-card">
+      <h2 class="chart-title">Global Feature Importance</h2>
+      <p class="chart-desc">Which features the model relies on most across all patients — based on XGBoost's built-in feature importance scores.</p>
+      <div class="chart-img-wrap">
+        <img src="data:image/png;base64,{{ global_chart }}" alt="Global feature importance chart" class="chart-img"/>
+      </div>
+    </div>
+
+    <!-- Recent predictions table -->
+    <div class="table-card">
+      <h2 class="chart-title">Recent Predictions</h2>
+      {% if recent %}
+      <div class="table-wrap">
+        <table class="pred-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Timestamp</th>
+              <th>Risk Score</th>
+              <th>Label</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in recent %}
+            <tr>
+              <td>{{ row[0] }}</td>
+              <td>{{ row[1] }}</td>
+              <td>{{ (row[2] * 100) | round(1) }}%</td>
+              <td>
+                <span class="badge
+                  {% if row[3] == 'High Risk' %}badge-red
+                  {% elif row[3] == 'Moderate Risk' %}badge-amber
+                  {% else %}badge-green{% endif %}">
+                  {{ row[3] }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <p>No predictions yet. <a href="/">Make your first prediction →</a></p>
+      </div>
+      {% endif %}
+    </div>
+
+  </main>
+</body>
+</html>

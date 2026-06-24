@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Prediction Result — ReadmitAI</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="nav-icon">⚕</span>
+      <span>ReadmitAI</span>
+    </div>
+    <div class="nav-links">
+      <a href="/">Predict</a>
+      <a href="/dashboard">Dashboard</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="page-header">
+      <h1>Prediction Result</h1>
+      <p class="subtitle">30-day readmission risk assessment with SHAP explainability</p>
+    </header>
+
+    <!-- Risk score card -->
+    <div class="result-hero">
+      <div class="gauge-wrap">
+        <svg class="gauge" viewBox="0 0 200 110" xmlns="http://www.w3.org/2000/svg">
+          <!-- Background arc -->
+          <path d="M 20 100 A 80 80 0 0 1 180 100"
+                fill="none" stroke="#21262d" stroke-width="14" stroke-linecap="round"/>
+          <!-- Coloured arc — dashoffset drives fill level -->
+          <path id="gauge-arc" d="M 20 100 A 80 80 0 0 1 180 100"
+                fill="none" stroke="{{ risk_color }}" stroke-width="14"
+                stroke-linecap="round"
+                stroke-dasharray="251.2"
+                stroke-dashoffset="{{ 251.2 - (risk_score / 100 * 251.2) }}"/>
+          <!-- Score text -->
+          <text x="100" y="90" text-anchor="middle"
+                font-size="36" font-weight="700" fill="{{ risk_color }}" font-family="system-ui">
+            {{ risk_score }}%
+          </text>
+        </svg>
+
+        <p class="risk-desc">
+          {% if risk_label == 'High Risk' %}
+            This patient has a <strong>high probability</strong> of being readmitted within 30 days. Consider enhanced discharge planning and close follow-up.
+          {% elif risk_label == 'Moderate Risk' %}
+            This patient has a <strong>moderate probability</strong> of readmission. Standard monitoring with targeted follow-up is recommended.
+          {% else %}
+            This patient has a <strong>low probability</strong> of readmission. Standard discharge procedures apply.
+          {% endif %}
+        </p>
+      </div>
+
+      <!-- Top 3 driving factors -->
+      <div class="factors-card">
+        <h3>Top contributing factors</h3>
+        {% for f in top_factors %}
+        <div class="factor-row">
+          <div class="factor-name">{{ f.feature }}</div>
+          <div class="factor-meta">
+            <span class="factor-value">Value: {{ f.value }}</span>
+            <span class="factor-impact {% if f.impact == 'increases' %}impact-up{% else %}impact-down{% endif %}">
+              {% if f.impact == 'increases' %}▲ Increases risk{% else %}▼ Decreases risk{% endif %}
+            </span>
+          </div>
+        </div>
+        {% endfor %}
+        <p class="factors-note">Based on SHAP values — how much each feature shifted this patient's prediction from the baseline.</p>
+      </div>
+    </div>
+
+    <!-- SHAP waterfall chart -->
+    <div class="chart-card">
+      <h2 class="chart-title">SHAP Feature Impact</h2>
+      <p class="chart-desc">Red bars push the prediction toward readmission. Green bars push it away. The length of each bar shows how much that feature mattered for <em>this specific patient</em>.</p>
+      <div class="chart-img-wrap">
+        <img src="data:image/png;base64,{{ waterfall_chart }}" alt="SHAP waterfall chart" class="chart-img"/>
+      </div>
+    </div>
+
+    <div class="result-actions">
+      <a href="/" class="btn-primary">← Predict another patient</a>
+      <a href="/dashboard" class="btn-secondary">View dashboard</a>
+    </div>
+  </main>
+</body>
+</html>

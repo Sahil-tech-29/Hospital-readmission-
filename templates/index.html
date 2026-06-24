@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hospital Readmission Predictor</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="nav-icon">⚕</span>
+      <span>ReadmitAI</span>
+    </div>
+    <div class="nav-links">
+      <a href="/" class="active">Predict</a>
+      <a href="/dashboard">Dashboard</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="page-header">
+      <h1>30-Day Readmission Risk Predictor</h1>
+      <p class="subtitle">Enter patient clinical details below to assess readmission risk using an explainable ML model.</p>
+    </header>
+
+    <form action="/predict" method="POST" class="predict-form">
+
+      <!-- Section 1: Demographics -->
+      <div class="form-section">
+        <h2 class="section-title"><span class="section-num">01</span> Demographics</h2>
+        <div class="field-grid">
+
+          <div class="field-group">
+            <label>Age bracket</label>
+            <select name="age">
+              <option value="5">[0–10)</option>
+              <option value="15">[10–20)</option>
+              <option value="25">[20–30)</option>
+              <option value="35">[30–40)</option>
+              <option value="45">[40–50)</option>
+              <option value="55" selected>[50–60)</option>
+              <option value="65">[60–70)</option>
+              <option value="75">[70–80)</option>
+              <option value="85">[80–90)</option>
+              <option value="95">[90–100)</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label>Gender</label>
+            <select name="gender">
+              {% for g in genders %}
+              <option value="{{ g }}">{{ g }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label>Race</label>
+            <select name="race">
+              {% for r in races %}
+              <option value="{{ r }}">{{ r }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section 2: Admission Info -->
+      <div class="form-section">
+        <h2 class="section-title"><span class="section-num">02</span> Admission Details</h2>
+        <div class="field-grid">
+
+          <div class="field-group">
+            <label>Admission type</label>
+            <select name="admission_type_id">
+              {% for k, v in admission_types.items() %}
+              <option value="{{ k }}">{{ v }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label>Admission source</label>
+            <select name="admission_source_id">
+              {% for k, v in admission_sources.items() %}
+              <option value="{{ k }}">{{ v }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label>Discharge disposition</label>
+            <select name="discharge_disposition_id">
+              {% for k, v in discharge_disps.items() %}
+              <option value="{{ k }}">{{ v }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label>Days in hospital</label>
+            <input type="number" name="time_in_hospital" value="3" min="1" max="14"/>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section 3: Clinical History -->
+      <div class="form-section">
+        <h2 class="section-title"><span class="section-num">03</span> Clinical History</h2>
+        <div class="field-grid">
+
+          <div class="field-group">
+            <label>Primary diagnosis (diag_1)</label>
+            <select name="diag_1">
+              {% for d in diag_groups %}
+              <option value="{{ d }}" {% if d=='Diabetes' %}selected{% endif %}>{{ d }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label>Secondary diagnosis (diag_2)</label>
+            <select name="diag_2">
+              {% for d in diag_groups %}
+              <option value="{{ d }}">{{ d }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label>Tertiary diagnosis (diag_3)</label>
+            <select name="diag_3">
+              {% for d in diag_groups %}
+              <option value="{{ d }}">{{ d }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label>Number of diagnoses</label>
+            <input type="number" name="number_diagnoses" value="5" min="1" max="16"/>
+          </div>
+
+          <div class="field-group">
+            <label>Outpatient visits (past year)</label>
+            <input type="number" name="number_outpatient" value="0" min="0"/>
+          </div>
+
+          <div class="field-group">
+            <label>Emergency visits (past year)</label>
+            <input type="number" name="number_emergency" value="0" min="0"/>
+          </div>
+
+          <div class="field-group">
+            <label>Inpatient visits (past year)</label>
+            <input type="number" name="number_inpatient" value="0" min="0"/>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section 4: Lab & Procedures -->
+      <div class="form-section">
+        <h2 class="section-title"><span class="section-num">04</span> Lab Results & Procedures</h2>
+        <div class="field-grid">
+
+          <div class="field-group">
+            <label>Lab procedures performed</label>
+            <input type="number" name="num_lab_procedures" value="40" min="1" max="132"/>
+          </div>
+
+          <div class="field-group">
+            <label>Procedures performed</label>
+            <input type="number" name="num_procedures" value="1" min="0" max="6"/>
+          </div>
+
+          <div class="field-group">
+            <label>A1C result</label>
+            <select name="A1Cresult">
+              <option value="None">Not tested</option>
+              <option value="Norm">Normal</option>
+              <option value=">7">&gt;7</option>
+              <option value=">8">&gt;8</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label>Max glucose serum</label>
+            <select name="max_glu_serum">
+              <option value="None">Not tested</option>
+              <option value="Norm">Normal</option>
+              <option value=">200">&gt;200</option>
+              <option value=">300">&gt;300</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section 5: Medications -->
+      <div class="form-section">
+        <h2 class="section-title"><span class="section-num">05</span> Medications</h2>
+        <div class="field-grid">
+
+          <div class="field-group">
+            <label>Number of medications</label>
+            <input type="number" name="num_medications" value="10" min="1" max="81"/>
+          </div>
+
+          <div class="field-group">
+            <label>Insulin</label>
+            <select name="insulin">
+              <option value="0">No</option>
+              <option value="1">Steady</option>
+              <option value="2">Up</option>
+              <option value="-1">Down</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label>Metformin</label>
+            <select name="metformin">
+              <option value="0">No</option>
+              <option value="1">Steady</option>
+              <option value="2">Up</option>
+              <option value="-1">Down</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label>Medication change during visit</label>
+            <select name="change">
+              <option value="">No change</option>
+              <option value="Ch">Changed</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label>On diabetes medication</label>
+            <select name="diabetesMed">
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Predict Readmission Risk →</button>
+      </div>
+
+    </form>
+  </main>
+</body>
+</html>
